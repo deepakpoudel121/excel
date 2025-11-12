@@ -10,14 +10,15 @@ interface CellValue {
 
 const ROWS = 30
 const COLS = 20
+//TO NAME THE HEADER A,B,C,D,E....
 const COL_HEADERS = Array.from({ length: COLS }, (_, i) => String.fromCharCode(65 + i))
 
-// Extracts numeric values from a column (e.g., "A" or "F")
+
 const getColumnCells = (colLetter: string, data: CellValue): number[] => {
-  const colIndex = colLetter.charCodeAt(0) - 65
-  if (colIndex < 0 || colIndex >= COLS) return []
+  const colIndex = colLetter.charCodeAt(0) - 65 
+  if (colIndex < 0 || colIndex >= COLS) return [] 
   
-  const values: number[] = []
+  const values: number[] = [] 
   for (let row = 0; row < ROWS; row++) {
     const key = `${colLetter}${row + 1}`
     const val = data[key]
@@ -29,7 +30,7 @@ const getColumnCells = (colLetter: string, data: CellValue): number[] => {
   return values
 }
 
-// Extracts numeric values from a cell range (e.g., "A1:B10")
+
 const getCellRange = (start: string, end: string, data: CellValue): number[] => {
   const startCol = start.charCodeAt(0) - 65
   const startRow = Number.parseInt(start.slice(1)) - 1
@@ -50,22 +51,22 @@ const getCellRange = (start: string, end: string, data: CellValue): number[] => 
   return values
 }
 
-// Creates spreadsheet function implementations
+
 const createFormulaContext = (data: CellValue) => ({
   SUM: (arg: string): number => {
     let values: number[] = []
     
-    // Handle column reference (e.g., "F:F")
+
     if (/^[A-J]:[A-J]$/.test(arg)) {
       const col = arg.charAt(0)
       values = getColumnCells(col, data)
     }
-    // Handle range reference (e.g., "A1:B10")
+
     else if (arg.includes(":")) {
       const [start, end] = arg.split(":")
       values = getCellRange(start.trim(), end.trim(), data)
     }
-    // Handle column reference (e.g., "F")
+
     else if (/^[A-J]$/.test(arg)) {
       values = getColumnCells(arg, data)
     }
@@ -138,12 +139,12 @@ const createFormulaContext = (data: CellValue) => ({
   },
 })
 
-// Evaluates a formula with support for functions and cell references
+
 const evaluateFormula = (formula: string, data: CellValue, visitedCells = new Set<string>()): string => {
   try {
     let expression = formula.slice(1).trim()
     
-    // Step 1: Replace spreadsheet functions (SUM, AVERAGE, etc.) with their numeric results
+
     const functionRegex = /(SUM|AVERAGE|COUNT|MIN|MAX)\s*\(\s*([^)]+)\s*\)/gi
     expression = expression.replace(functionRegex, (match, funcName, arg) => {
       const fn = funcName.toUpperCase()
@@ -162,31 +163,30 @@ const evaluateFormula = (formula: string, data: CellValue, visitedCells = new Se
       return "0"
     })
 
-    // Step 2: Replace cell references with their evaluated values
+
     const cellRefRegex = /([A-J])(\d+)/g
     expression = expression.replace(cellRefRegex, (match, col, row) => {
       const cellKey = `${col}${row}`
       
-      // Detect circular references
+
       if (visitedCells.has(cellKey)) {
         throw new Error("Circular reference detected")
       }
       
       const cellValue = data[cellKey] || "0"
       
-      // If the referenced cell contains a formula, evaluate it recursively
+
       if (cellValue.startsWith("=")) {
         const newVisited = new Set(visitedCells)
         newVisited.add(cellKey)
         return evaluateFormula(cellValue, data, newVisited)
       }
       
-      // Return the numeric value or 0 if not a valid number
+
       const num = Number.parseFloat(cellValue)
       return Number.isNaN(num) ? "0" : String(num)
     })
 
-    // Step 3: Evaluate the final mathematical expression
     const result = evaluate(expression)
     return String(result)
   } catch (err) {
@@ -244,7 +244,7 @@ export function Spreadsheet() {
         e.preventDefault()
         saveCellEdit()
         moveCell(1, 0)
-        // Auto-start editing the next cell
+
         setTimeout(() => {
           const { row, col } = selectedCell
           const newRow = Math.max(0, Math.min(ROWS - 1, row + 1))
@@ -256,7 +256,7 @@ export function Spreadsheet() {
         saveCellEdit()
         const delta = e.shiftKey ? -1 : 1
         moveCell(0, delta)
-        // Auto-start editing the next cell after Tab
+
         setTimeout(() => {
           const { row, col } = selectedCell
           const newCol = Math.max(0, Math.min(COLS - 1, col + delta))
@@ -295,7 +295,7 @@ export function Spreadsheet() {
           e.preventDefault()
           const delta = e.shiftKey ? -1 : 1
           moveCell(0, delta)
-          // Auto-start editing after Tab when not in edit mode
+
           setTimeout(() => {
             const newCol = Math.max(0, Math.min(COLS - 1, col + delta))
             setEditingCell({ row, col: newCol })
